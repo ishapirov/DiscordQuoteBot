@@ -1,9 +1,7 @@
 import discord
-from dotenv import load_dotenv
 from discord.ext import commands
 import psycopg2
 
-load_dotenv()
 TOKEN = 'ODQ1MzI1OTQ3NTE4ODQ0OTUw.YKfVIw.8o4yJ-CC81PUhmW4mGBngIMcKjs'
 GUILD = 'Bot Testing'
 COMMAND_PREFIX = '!'
