@@ -1,19 +1,18 @@
-import os
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 import psycopg2
 
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD = os.getenv('DISCORD_GUILD')
+TOKEN = 'ODQ1MzI1OTQ3NTE4ODQ0OTUw.YKfVIw.8o4yJ-CC81PUhmW4mGBngIMcKjs'
+GUILD = 'Bot Testing'
 COMMAND_PREFIX = '!'
 BOT_NAME = 'QuoteBot'
 
-HOST=os.getenv('POSTGRES_HOST')
-DATABASE=os.getenv('POSTGRES_DATABASE')
-USERNAME=os.getenv('POSTGRES_USERNAME')
-PASSWORD=os.getenv('POSTGRES_PASSWORD')
+HOST='my-postgres-db.c3fuusj4wxdd.us-east-1.rds.amazonaws.com'
+DATABASE='quotebot'
+USERNAME='postgres'
+PASSWORD='secret12'
 
 DB_TABLE = 'quotes'
 DB_COL_AUTHOR = 'author'
@@ -27,6 +26,8 @@ bot = commands.Bot(command_prefix=COMMAND_PREFIX,intents=intents)
 
 @bot.event
 async def on_message(message):
+    if message.channel.name != 'quotes':
+        return
     if message.author.name == BOT_NAME:
         return
     if message.content.startswith(COMMAND_PREFIX):
@@ -62,6 +63,17 @@ async def quote(ctx,quote_author):
         await ctx.send(formattedResponse)
     else:
         await ctx.send("No quotes have been added yet.")
+
+
+@bot.command(name='addhistory',help="Adds quotes from the message history of this channel. If used multiple times, the same quotes will be readded")
+@commands.has_role('admin')
+async def addHistoricalQuotes(ctx):
+    messages = await ctx.channel.history(limit=1000).flatten()
+    for message in messages:
+        quote = validateQuoteFormat(message.content)
+        if(quote != None):
+            insertQuote(quote[0],quote[1])
+    await message.channel.send("Quotes successfully added!")
 
 def validateQuoteFormat(message):
     if not message.startswith('"'):
