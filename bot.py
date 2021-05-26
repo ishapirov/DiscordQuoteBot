@@ -97,8 +97,7 @@ def establishDBConnection():
 def insertQuote(quote,author):
     conn = establishDBConnection()
     cur = conn.cursor()
-    print(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}) VALUES  (\"{author}\", \"{quote}\");")
-    cur.execute(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}) VALUES  (\"{author}\", \"{quote}\");")
+    cur.execute(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}) VALUES  (\'{author}\', \'{quote}\');")
     conn.commit()
     conn.close()
 
@@ -113,7 +112,7 @@ def selectAnyQuote():
 def checkPersonHasQuote(author):
     conn = establishDBConnection()
     cur = conn.cursor()
-    cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \"{author}\")")
+    cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\')")
     row = cur.fetchone()
     print(row)
     conn.close()
@@ -122,7 +121,7 @@ def checkPersonHasQuote(author):
 def selectPersonQuote(author):
     conn = establishDBConnection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_AUTHOR},{DB_COL_QUOTE} FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \"{author}\" ORDER BY random() LIMIT 1;")
+    cur.execute(f"SELECT {DB_COL_AUTHOR},{DB_COL_QUOTE} FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\' ORDER BY random() LIMIT 1;")
     row = cur.fetchone()
     conn.close()
     return row
