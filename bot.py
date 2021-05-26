@@ -18,7 +18,6 @@ DB_COL_AUTHOR = 'author'
 DB_COL_QUOTE = 'quote_said'
 
 intents = discord.Intents.default()
-intents.members = True
 intents.guild_messages = True
 intents.messages = True
 bot = commands.Bot(command_prefix=COMMAND_PREFIX,intents=intents)
@@ -36,7 +35,6 @@ async def on_message(message):
         if(quote == None):
             return
         insertQuote(quote[0],quote[1])
-        await message.channel.send("Quote successfully added!")
     
 
 @bot.command(name='quote', help='Responds with a random quote from any user')
