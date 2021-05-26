@@ -1,16 +1,17 @@
+import os
 import discord
 from discord.ext import commands
 import psycopg2
 
-TOKEN = 'ODQ1MzI1OTQ3NTE4ODQ0OTUw.YKfVIw.8o4yJ-CC81PUhmW4mGBngIMcKjs'
-GUILD = 'Bot Testing'
+TOKEN = os.environ['DISCORD_TOKEN']
+GUILD = os.environ['DISCORD_GUILD']
 COMMAND_PREFIX = '!'
 BOT_NAME = 'QuoteBot'
 
-HOST='my-postgres-db.c3fuusj4wxdd.us-east-1.rds.amazonaws.com'
-DATABASE='quotebot'
-USERNAME='postgres'
-PASSWORD='secret12'
+HOST=os.environ['HOST']
+DATABASE=os.environ['DATABASE']
+USERNAME=os.environ['USERNAME']
+PASSWORD=os.environ['PASSWORD']
 
 DB_TABLE = 'quotes'
 DB_COL_AUTHOR = 'author'
@@ -60,7 +61,7 @@ async def quote(ctx,quote_author):
         formattedResponse = '"' + quote + '"' + " - " + author
         await ctx.send(formattedResponse)
     else:
-        await ctx.send("No quotes have been added yet.")
+        await ctx.send("No quotes have been added for this person yet.")
 
 
 @bot.command(name='addhistory',help="Adds quotes from the message history of this channel. If used multiple times, the same quotes will be readded")
