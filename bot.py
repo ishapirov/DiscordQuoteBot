@@ -54,8 +54,8 @@ async def quote(ctx):
 
 @bot.command(name='quotefrom', help='Responds with a random quote from the specified user')
 async def quote(ctx,quote_author):
-    if checkPersonHasQuote(quote_author):
-        row = selectPersonQuote(quote_author)
+    if checkPersonHasQuote(quote_author.lower()):
+        row = selectPersonQuote(quote_author.lower())
         author = row[0]
         quote = row[1]
         formattedResponse = '"' + quote + '"' + " - " + author
@@ -82,7 +82,7 @@ def validateQuoteFormat(message):
     quote = message.split('"')[1]
     if len(message.split('-')) != 2:
         return None
-    author = message.split('-')[1].strip()
+    author = message.split('-')[1].strip().lower()
     if len(author.split()) != 1:
         return None
     return (quote,author)
@@ -97,6 +97,7 @@ def establishDBConnection():
 def insertQuote(quote,author):
     conn = establishDBConnection()
     cur = conn.cursor()
+    print(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}) VALUES  ('{author}', '{quote}');")
     cur.execute(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}) VALUES  ('{author}', '{quote}');")
     conn.commit()
     conn.close()
