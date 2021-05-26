@@ -75,6 +75,8 @@ async def addHistoricalQuotes(ctx):
     await message.channel.send("Quotes successfully added!")
 
 def validateQuoteFormat(message):
+    if ";" in message:
+        return
     if not message.startswith('"'):
         return None
     if len(message.split('"')) != 3:
@@ -85,6 +87,8 @@ def validateQuoteFormat(message):
     author = message.split('-')[1].strip().lower()
     if len(author.split()) != 1:
         return None
+    quote = quote.replace("'","''")
+    author = author.replace("'","''")
     return (quote,author)
 
 def establishDBConnection():
