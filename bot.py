@@ -24,7 +24,7 @@ bot = commands.Bot(command_prefix=COMMAND_PREFIX,intents=intents)
 
 @bot.event
 async def on_message(message):
-    if message.channel.name != 'quotes':
+    if message.channel.name != 'quotes' or message.channel.name != 'quotes-pull':
         return
     if message.author.name == BOT_NAME:
         return
