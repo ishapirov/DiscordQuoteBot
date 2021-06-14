@@ -59,10 +59,10 @@ async def quote(ctx,quote_author):
 @bot.command(name="delete", help="Deletes a quote with the given id")
 async def delete_quote(ctx, quote_id : int):
     if(selectQuoteByID(quote_id) == None):
-        ctx.send("A quote with the given id could not be found.")
+        await ctx.send("A quote with the given id could not be found.")
     else:
         deleteQuoteByID(quote_id)
-        ctx.send("The quote was successfully deleted!")
+        await ctx.send("The quote was successfully deleted!")
 
 @bot.event
 async def on_message_edit(before, after):
