@@ -49,7 +49,7 @@ async def quote(ctx):
 
 @bot.command(name='quotefrom', help='Responds with a random quote from the specified user')
 async def quote(ctx,quote_author):
-    if checkPersonHasQuote(quote_author.lower()):
+    if checkPersonHasQuote(quote_author.lower())[0]:
         row = selectPersonQuote(quote_author.lower())
         formattedResponse = formatQuote(row)
         await ctx.send(formattedResponse)
@@ -148,7 +148,6 @@ def checkPersonHasQuote(author):
     cur = conn.cursor()
     cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\')")
     row = cur.fetchone()
-    print(row)
     conn.close()
     return row
 
