@@ -8,7 +8,7 @@ GUILD = os.environ['DISCORD_GUILD']
 COMMAND_PREFIX = '!'
 BOT_NAME = 'QuoteBot'
 
-HOST=os.environ['DATABASE_URL']
+HOST=os.environ['HOST']
 DATABASE=os.environ['DATABASE']
 USERNAME=os.environ['USERNAME']
 PASSWORD=os.environ['PASSWORD']
