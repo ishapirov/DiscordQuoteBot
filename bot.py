@@ -80,7 +80,6 @@ async def on_message_delete(message):
         deleteQuoteByQuoteAndAuthor(prevQuote[0],prevQuote[1])
 
 @bot.command(name='addhistory',help="Adds quotes from the message history of this channel. If used multiple times, the same quotes will be readded")
-@commands.has_role('OG Loser Bois')
 async def addHistoricalQuotes(ctx):
     messages = await ctx.channel.history(limit=2000).flatten()
     for message in messages:
