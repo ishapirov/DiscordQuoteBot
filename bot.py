@@ -71,7 +71,7 @@ async def on_message_edit(before, after):
         deleteQuoteByQuoteAndAuthor(prevQuote[0],prevQuote[1])
     newQuote = validateQuoteFormat(after.content)
     if(newQuote != None):
-        insertQuote(newQuote[0],newQuote[1])
+        addNewQuote(newQuote[0],newQuote[1])
 
 @bot.event
 async def on_message_delete(message):
@@ -79,14 +79,16 @@ async def on_message_delete(message):
     if(prevQuote != None):
         deleteQuoteByQuoteAndAuthor(prevQuote[0],prevQuote[1])
 
-# @bot.command(name='addhistory',help="Adds quotes from the message history of this channel. If used multiple times, the same quotes will be readded")
-# @commands.has_role('OG Loser Bois')
+@bot.command(name='addhistory',help="Adds quotes from the message history of this channel. If used multiple times, the same quotes will be readded")
+@commands.has_role('OG Loser Bois')
 async def addHistoricalQuotes(ctx):
     messages = await ctx.channel.history(limit=2000).flatten()
     for message in messages:
+        if message.author.name == BOT_NAME:
+            continue
         quote = validateQuoteFormat(message.content)
         if(quote != None):
-            insertQuote(quote[0],quote[1])
+            addNewQuote(quote[0],quote[1])
     await message.channel.send("Quotes successfully added!")
 
 def validateQuoteFormat(message):
@@ -120,6 +122,10 @@ def establishDBConnection():
     user=USERNAME,
     password=PASSWORD)
 
+def addNewQuote(quote,author):
+    if not checkQuoteAlreadyInDB(quote,author)[0]:
+        insertQuote(quote,author)
+
 def insertQuote(quote,author):
     conn = establishDBConnection()
     cur = conn.cursor()
@@ -147,6 +153,14 @@ def checkPersonHasQuote(author):
     conn = establishDBConnection()
     cur = conn.cursor()
     cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\')")
+    row = cur.fetchone()
+    conn.close()
+    return row
+
+def checkQuoteAlreadyInDB(quote,author):
+    conn = establishDBConnection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\' AND {DB_COL_QUOTE} = \'{quote}\')")
     row = cur.fetchone()
     conn.close()
     return row
