@@ -107,7 +107,7 @@ async def on_raw_reaction_add(payload):
             return
         reaction = get(message.reactions, emoji=payload.emoji.name)
         if reaction:
-            current_count = reaction.count
+            current_count = reaction.count-1
             quote_id_str = message.content.split()[0][1:-1]
             if not quote_id_str.isnumeric():
                 return
@@ -224,7 +224,6 @@ def update_score_of_quote(quote_id,new_score):
     conn = establish_db_Connection()
     cur = conn.cursor()
     cur.execute(f"UPDATE {DB_TABLE} SET {DB_COL_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
-    row = cur.fetchone()
     conn.close()
 
 def get_top_rated_quotes(number_of_quotes):
