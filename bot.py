@@ -77,6 +77,7 @@ async def leaderboard(ctx):
     place_on_leaderboard = 1
     for quote in top_quotes:
         leaderboard += f"#{place_on_leaderboard} {repr(quote)}\n"
+        place_on_leaderboard += 1
     await ctx.send(leaderboard)
 
 
