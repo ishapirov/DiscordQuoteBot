@@ -234,7 +234,7 @@ def update_score_of_quote(quote_id,new_score):
 def get_top_rated_quotes(number_of_quotes):
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT * FROM {DB_TABLE} ORDER BY {DB_COL_SCORE} LIMIT {number_of_quotes}")
+    cur.execute(f"SELECT * FROM {DB_TABLE} ORDER BY {DB_COL_SCORE} DESC LIMIT {number_of_quotes}")
     rows = cur.fetchall()
     conn.close()
     return rows
