@@ -117,6 +117,9 @@ async def on_raw_reaction_add(payload):
             quote = select_quote_by_id(quote_id)
             if(current_count > quote.score):
                 update_score_of_quote(quote_id,current_count)
+            new_message = f"{message.content[0:-1]}{current_count}"
+        await message.edit(content=new_message)
+   
 
 
 # @bot.command(name='addhistory',help="Adds quotes from the message history of this channel")
@@ -223,8 +226,7 @@ def check_quote_exists_by_quote_and_author(quote,author):
 def update_score_of_quote(quote_id,new_score):
     conn = establish_db_Connection()
     cur = conn.cursor()
-    print(new_score)
-    print(quote_id)
+    print(f"UPDATE {DB_TABLE} SET {DB_COL_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
     cur.execute(f"UPDATE {DB_TABLE} SET {DB_COL_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
     conn.close()
 
