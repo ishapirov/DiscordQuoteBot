@@ -20,6 +20,7 @@ DB_COL_AUTHOR = 'author'
 DB_COL_QUOTE = 'quote_said'
 DB_COL_SCORE = 'score'
 
+LEADERBOARD_NUM_QUOTES = 10
 THUMBS_UP='👍'
 
 intents = discord.Intents.default()
@@ -72,7 +73,7 @@ async def delete_quote(ctx, quote_id : int):
 @bot.command(name='leaderboard', help='Returns the top 10 rated quotes')
 async def leaderboard(ctx):
     leaderboard = ""
-    top_quotes = get_top_rated_quotes()
+    top_quotes = get_top_rated_quotes(LEADERBOARD_NUM_QUOTES)
     place_on_leaderboard = 1
     for quote in top_quotes:
         leaderboard += f"#{place_on_leaderboard} {repr(quote)}\n"
