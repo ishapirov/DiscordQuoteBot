@@ -48,7 +48,7 @@ async def quote(ctx):
     quoteInfo = select_any_quote()
     if quoteInfo != None:
         message = await ctx.send(repr(quoteInfo))
-        message.add_reaction(THUMBS_UP)
+        await message.add_reaction(THUMBS_UP)
     else:
         await ctx.send("No quotes have been added yet.")
 
