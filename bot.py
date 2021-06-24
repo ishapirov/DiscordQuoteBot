@@ -1,6 +1,7 @@
 import os
 import discord
 from discord.ext import commands
+from discord.utils import get
 import psycopg2
 
 TOKEN = os.environ['DISCORD_TOKEN']
@@ -17,8 +18,12 @@ DB_TABLE = 'quotes'
 DB_COL_QID = 'quote_id'
 DB_COL_AUTHOR = 'author'
 DB_COL_QUOTE = 'quote_said'
+DB_COL_SCORE = 'score'
+
+THUMBS_UP='👍'
 
 intents = discord.Intents.default()
+intents.members = True
 intents.guild_messages = True
 intents.messages = True
 bot = commands.Bot(command_prefix=COMMAND_PREFIX,intents=intents)
@@ -32,65 +37,100 @@ async def on_message(message):
     if message.content.startswith(COMMAND_PREFIX):
         await bot.process_commands(message)
     else:
-        quote = validateQuoteFormat(message.content)
-        if(quote == None):
+        validQuote = validate_quote_format(message.content)
+        if(validQuote == None):
             return
-        insertQuote(quote[0],quote[1])
+        add_new_quote(validQuote.author,validQuote.quote)
     
 
 @bot.command(name='quote', help='Responds with a random quote from any user')
 async def quote(ctx):
-    row = selectAnyQuote()
-    if row != None:
-        formattedResponse = formatQuote(row)
-        await ctx.send(formattedResponse)
+    quoteInfo = select_any_quote()
+    if quoteInfo != None:
+        message = await ctx.send(repr(quoteInfo))
+        message.add_reaction(THUMBS_UP)
     else:
         await ctx.send("No quotes have been added yet.")
 
 @bot.command(name='quotefrom', help='Responds with a random quote from the specified user')
-async def quote(ctx,quote_author):
-    if checkPersonHasQuote(quote_author.lower())[0]:
-        row = selectPersonQuote(quote_author.lower())
-        formattedResponse = formatQuote(row)
-        await ctx.send(formattedResponse)
+async def quote_from(ctx,quote_author):
+    if check_person_has_quote(quote_author.lower()):
+        quoteInfo = select_person_quote(quote_author.lower())
+        message = await ctx.send(repr(quoteInfo))
+        message.add_reaction(THUMBS_UP)
     else:
         await ctx.send("No quotes have been added for this person yet.")
 
 @bot.command(name="delete", help="Deletes a quote with the given id")
 async def delete_quote(ctx, quote_id : int):
-    if(selectQuoteByID(quote_id) == None):
+    if(select_quote_by_id(quote_id) == None):
         await ctx.send("A quote with the given id could not be found.")
     else:
-        deleteQuoteByID(quote_id)
+        delete_quote_by_id(quote_id)
         await ctx.send("The quote was successfully deleted!")
+
+@bot.command(name='leaderboard', help='Returns the top 10 rated quotes')
+async def leaderboard(ctx):
+    leaderboard = ""
+    top_quotes = get_top_rated_quotes()
+    place_on_leaderboard = 1
+    for quote in top_quotes:
+        leaderboard += f"#{place_on_leaderboard} {repr(quote)}\n"
+    await ctx.send(leaderboard)
+
 
 @bot.event
 async def on_message_edit(before, after):
-    prevQuote = validateQuoteFormat(before.content)
+    prevQuote = validate_quote_format(before.content)
     if(prevQuote != None):
-        deleteQuoteByQuoteAndAuthor(prevQuote[0],prevQuote[1])
-    newQuote = validateQuoteFormat(after.content)
+        delete_quote_by_quote_and_author(prevQuote.quote,prevQuote.author)
+    newQuote = validate_quote_format(after.content)
     if(newQuote != None):
-        addNewQuote(newQuote[0],newQuote[1])
+        add_new_quote(newQuote.quote,newQuote.author)
 
 @bot.event
 async def on_message_delete(message):
-    prevQuote = validateQuoteFormat(message.content)
+    prevQuote = validate_quote_format(message.content)
     if(prevQuote != None):
-        deleteQuoteByQuoteAndAuthor(prevQuote[0],prevQuote[1])
+        delete_quote_by_quote_and_author(prevQuote.quote,prevQuote.author)
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    if payload.member.name == BOT_NAME:
+        return
+    if payload.emoji.name == THUMBS_UP:
+        channel = bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        if not message:
+            return
+        if message.author.name != BOT_NAME:
+            return
+        reaction = get(message.reactions, emoji=payload.emoji.name)
+        if reaction:
+            current_count = reaction.count
+            quote_id_str = message.content.split()[0][1:-1]
+            if not quote_id_str.isnumeric():
+                return
+            quote_id = int(quote_id_str)
+            if not check_quote_exists_by_id(quote_id):
+                return
+            quote = select_quote_by_id(quote_id)
+            if(current_count > quote.score):
+                update_score_of_quote(quote_id,current_count)
+
 
 # @bot.command(name='addhistory',help="Adds quotes from the message history of this channel")
-async def addHistoricalQuotes(ctx):
+async def add_historical_quotes(ctx):
     messages = await ctx.channel.history(limit=2000).flatten()
     for message in messages:
         if message.author.name == BOT_NAME:
             continue
-        quote = validateQuoteFormat(message.content)
-        if(quote != None):
-            addNewQuote(quote[0],quote[1])
+        validQuote = validate_quote_format(message.content)
+        if(validQuote != None):
+            add_new_quote(validQuote.quote,validQuote.author)
     await message.channel.send("Quotes successfully added!")
 
-def validateQuoteFormat(message):
+def validate_quote_format(message: str) -> 'ValidatedQuote':
     if ";" in message:
         return
     if not message.startswith('"'):
@@ -105,87 +145,131 @@ def validateQuoteFormat(message):
         return None
     quote = quote.replace("'","''")
     author = author.replace("'","''")
-    return (quote,author)
+    return ValidatedQuote(quote,author)
 
-
-def formatQuote(row):
+def format_quote(row):
     quote_id = row[0]
     author = row[1]
     quote = row[2]
-    return f"({quote_id}) \"{quote}\" - {author}"
+    score = row[3]
+    return f"({quote_id}) \"{quote}\" - {author}, Score: {score}"
     
-def establishDBConnection():
+def establish_db_Connection():
     return  psycopg2.connect(
     host=HOST,
     database=DATABASE,
     user=USERNAME,
     password=PASSWORD)
 
-def addNewQuote(quote,author):
-    if not checkQuoteAlreadyInDB(quote,author)[0]:
-        insertQuote(quote,author)
+def add_new_quote(quote,author) -> None:
+    if not check_quote_exists_by_quote_and_author(quote,author)[0]:
+        insert_quote(quote,author)
 
-def insertQuote(quote,author):
-    conn = establishDBConnection()
+def insert_quote(quote,author):
+    conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}) VALUES  (\'{author}\', \'{quote}\');")
+    cur.execute(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}, {DB_COL_SCORE}) VALUES  ('{author}', '{quote}', 0);")
     conn.commit()
     conn.close()
 
-def selectQuoteByID(quote_id : int):
-    conn = establishDBConnection()
+def select_quote_by_id(quote_id : int) -> 'QuoteInfo':
+    conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE} FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id};")
+    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_SCORE} FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id};")
     row = cur.fetchone()
     conn.close()
-    return row
+    return get_quote_info_from_row(row)
 
-def selectAnyQuote():
-    conn = establishDBConnection()
+def select_person_quote(author):
+    conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE} FROM {DB_TABLE} ORDER BY random() LIMIT 1;")
+    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_SCORE} FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\' ORDER BY random() LIMIT 1;")
     row = cur.fetchone()
     conn.close()
-    return row
+    return get_quote_info_from_row(row) 
 
-def checkPersonHasQuote(author):
-    conn = establishDBConnection()
+def select_any_quote() -> 'QuoteInfo':
+    conn = establish_db_Connection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_SCORE} FROM {DB_TABLE} ORDER BY random() LIMIT 1;")
+    row = cur.fetchone()
+    conn.close()
+    return get_quote_info_from_row(row)
+
+def check_person_has_quote(author) -> bool:
+    conn = establish_db_Connection()
     cur = conn.cursor()
     cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\')")
     row = cur.fetchone()
     conn.close()
-    return row
+    return row[0]
 
-def checkQuoteAlreadyInDB(quote,author):
-    conn = establishDBConnection()
+def check_quote_exists_by_id(quote_id):
+    conn = establish_db_Connection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id})")
+    row = cur.fetchone()
+    conn.close()
+    return row[0]
+
+def check_quote_exists_by_quote_and_author(quote,author):
+    conn = establish_db_Connection()
     cur = conn.cursor()
     cur.execute(f"SELECT EXISTS(SELECT 1 FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\' AND {DB_COL_QUOTE} = \'{quote}\')")
     row = cur.fetchone()
     conn.close()
-    return row
+    return row[0]
 
-def selectPersonQuote(author):
-    conn = establishDBConnection()
+def update_score_of_quote(quote_id,new_score):
+    conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE} FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\' ORDER BY random() LIMIT 1;")
+    cur.execute(f"UPDATE {DB_TABLE} SET {DB_COL_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
     row = cur.fetchone()
     conn.close()
-    return row
 
-def deleteQuoteByQuoteAndAuthor(quote,author):
-    conn = establishDBConnection()
+def get_top_rated_quotes(number_of_quotes):
+    conn = establish_db_Connection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM {DB_TABLE} ORDER BY {DB_COL_SCORE} LIMIT {number_of_quotes}")
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+    
+
+def delete_quote_by_quote_and_author(quote,author):
+    conn = establish_db_Connection()
     cur = conn.cursor()
     cur.execute(f"DELETE FROM {DB_TABLE} WHERE {DB_COL_QUOTE} = \'{quote}\' AND {DB_COL_AUTHOR} = \'{author}\';")
     conn.commit()
     conn.close()
 
-def deleteQuoteByID(quote_id):
-    conn = establishDBConnection()
+def delete_quote_by_id(quote_id):
+    conn = establish_db_Connection()
     cur = conn.cursor()
     cur.execute(f"DELETE FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id};")
     conn.commit()
     conn.close()
 
+def get_quote_info_from_row(row) -> 'QuoteInfo':
+    if(row == None):
+        return None
+    return QuoteInfo(row)
 
+class ValidatedQuote:
+    def __init__(self,author,quote: tuple):
+        self.author = author
+        self.quote = quote
 
+class QuoteInfo:
+    def __init__(self,row: tuple):
+        self.quote_id = row[0]
+        self.author = row[1]
+        self.quote = row[2]
+        self.score = row[3]
+
+    def __repr__(self) -> str:
+        return f"({self.quote_id}) \"{self.quote}\" - {self.author}, Score: {self.score}"
+
+        
+        
 bot.run(TOKEN)
