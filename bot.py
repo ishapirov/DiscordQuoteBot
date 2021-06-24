@@ -223,6 +223,7 @@ def check_quote_exists_by_quote_and_author(quote,author):
 def update_score_of_quote(quote_id,new_score):
     conn = establish_db_Connection()
     cur = conn.cursor()
+    print(new_score)
     cur.execute(f"UPDATE {DB_TABLE} SET {DB_COL_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
     conn.close()
 
