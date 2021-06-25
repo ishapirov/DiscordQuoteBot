@@ -321,10 +321,10 @@ class QuoteInfo:
         self.interesting = row[4]
 
     def like_leaderboard_format(self) -> str:
-        return f"Likes: {self.like}) \"{self.quote}\" - {self.author} (ID: {self.quote_id})"
+        return f"Likes: {self.like} \"{self.quote}\" - {self.author} (ID: {self.quote_id})"
 
     def interesting_leaderboard_format(self) -> str:
-        return f"Interesting Score: {self.interesting}) \"{self.quote}\" - {self.author} (ID:{self.quote_id})"
+        return f"Interesting Score: {self.interesting} \"{self.quote}\" - {self.author} (ID:{self.quote_id})"
 
     def __repr__(self) -> str:
         return f"\"{self.quote}\" - {self.author}\nLikes: {self.like}, Interesting Score: {self.interesting} (ID: {self.quote_id})"
