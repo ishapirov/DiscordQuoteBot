@@ -313,7 +313,7 @@ class ValidatedQuote:
 class QuoteInfo:
     def __init__(self,row: tuple):
         self.quote_id = row[0]
-        self.author = row[1]
+        self.author = row[1].capitalize()
         self.quote = row[2]
         self.like = row[3]
         self.interesting = row[4]
@@ -325,7 +325,7 @@ class QuoteInfo:
         return f"Interesting Score: {self.interesting}) \"{self.quote}\" - {self.author} (ID:{self.quote_id})"
 
     def __repr__(self) -> str:
-        return f"(\"{self.quote}\" - {self.author}\nLike Score: {self.like}, Interesting Score: {self.interesting} (ID: {self.quote_id}))"
+        return f"\"{self.quote}\" - {self.author}\nLike Score: {self.like}, Interesting Score: {self.interesting} (ID: {self.quote_id})"
         
         
 bot.run(TOKEN)
