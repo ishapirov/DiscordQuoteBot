@@ -319,13 +319,13 @@ class QuoteInfo:
         self.interesting = row[4]
 
     def like_leaderboard_format(self) -> str:
-        return f"Likes: {self.like}) \"{self.quote}\" - {self.author} ({self.quote_id})"
+        return f"Likes: {self.like}) \"{self.quote}\" - {self.author} (ID: {self.quote_id})"
 
     def interesting_leaderboard_format(self) -> str:
-        return f"Interesting Score: {self.interesting}) \"{self.quote}\" - {self.author} ({self.quote_id})"
+        return f"Interesting Score: {self.interesting}) \"{self.quote}\" - {self.author} (ID:{self.quote_id})"
 
     def __repr__(self) -> str:
-        return f"(\"{self.quote}\" - {self.author}, Like Score: {self.score}, Interesting Score: {self.interesting} {self.quote_id})"
+        return f"(\"{self.quote}\" - {self.author}\nLike Score: {self.like}, Interesting Score: {self.interesting} (ID: {self.quote_id}))"
         
         
 bot.run(TOKEN)
