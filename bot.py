@@ -212,7 +212,7 @@ def insert_quote(quote,author):
 def select_quote_by_id(quote_id : int) -> 'QuoteInfo':
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_LIKE_SCORE},DB_COL_INTERESTING_SCORE FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id};")
+    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_LIKE_SCORE},{DB_COL_INTERESTING_SCORE} FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id};")
     row = cur.fetchone()
     conn.close()
     return get_quote_info_from_row(row)
@@ -327,7 +327,7 @@ class QuoteInfo:
         return f"Interesting Score: {self.interesting}) \"{self.quote}\" - {self.author} (ID:{self.quote_id})"
 
     def __repr__(self) -> str:
-        return f"\"{self.quote}\" - {self.author}\nLike Score: {self.like}, Interesting Score: {self.interesting} (ID: {self.quote_id})"
+        return f"\"{self.quote}\" - {self.author}\nLikes: {self.like}, Interesting Score: {self.interesting} (ID: {self.quote_id})"
         
         
 bot.run(TOKEN)
