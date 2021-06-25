@@ -126,7 +126,7 @@ async def on_raw_reaction_add(payload):
         reaction = get(message.reactions, emoji=payload.emoji.name)
         if reaction:
             current_count = reaction.count-1
-            quote_id_str = message.content.split()[0][1:-1]
+            quote_id_str = message.content.split(':')[-1].split(')')[0].strip()
             if not quote_id_str.isnumeric():
                 return
             quote_id = int(quote_id_str)
@@ -135,7 +135,8 @@ async def on_raw_reaction_add(payload):
             quote = select_quote_by_id(quote_id)
             if(current_count > quote.like):
                 update_like_score_of_quote(quote_id,current_count)
-            new_message = f"{message.content[0:-1]}{current_count}"
+            quote.like = current_count
+            new_message = repr(quote)
         await message.edit(content=new_message)
     if payload.emoji.name == INTERESTING_EMOTE:
         channel = bot.get_channel(payload.channel_id)
@@ -147,7 +148,7 @@ async def on_raw_reaction_add(payload):
         reaction = get(message.reactions, emoji=payload.emoji.name)
         if reaction:
             current_count = reaction.count-1
-            quote_id_str = message.content.split()[0][1:-1]
+            quote_id_str = message.content.split(':')[-1].split(')')[0].strip()
             if not quote_id_str.isnumeric():
                 return
             quote_id = int(quote_id_str)
@@ -156,7 +157,8 @@ async def on_raw_reaction_add(payload):
             quote = select_quote_by_id(quote_id)
             if(current_count > quote.interesting):
                 update_interesting_score_of_quote(quote_id,current_count)
-            new_message = f"{message.content[0:-1]}{current_count}"
+            quote.interesting = current_count
+            new_message = repr(quote)
         await message.edit(content=new_message)
    
 
