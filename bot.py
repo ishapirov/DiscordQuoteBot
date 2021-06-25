@@ -18,10 +18,12 @@ DB_TABLE = 'quotes'
 DB_COL_QID = 'quote_id'
 DB_COL_AUTHOR = 'author'
 DB_COL_QUOTE = 'quote_said'
-DB_COL_SCORE = 'score'
+DB_COL_LIKE_SCORE = 'like_score'
+DB_COL_INTERESTING_SCORE = 'interesting_score'
 
 LEADERBOARD_NUM_QUOTES = 10
-THUMBS_UP='👍'
+LIKE_EMOTE='👍'
+INTERESTING_EMOTE='👀'
 
 intents = discord.Intents.default()
 intents.members = True
@@ -49,7 +51,8 @@ async def quote(ctx):
     quoteInfo = select_any_quote()
     if quoteInfo != None:
         message = await ctx.send(repr(quoteInfo))
-        await message.add_reaction(THUMBS_UP)
+        await message.add_reaction(LIKE_EMOTE)
+        await message.add_reaction(INTERESTING_EMOTE)
     else:
         await ctx.send("No quotes have been added yet.")
 
@@ -58,7 +61,8 @@ async def quote_from(ctx,quote_author):
     if check_person_has_quote(quote_author.lower()):
         quoteInfo = select_person_quote(quote_author.lower())
         message = await ctx.send(repr(quoteInfo))
-        message.add_reaction(THUMBS_UP)
+        message.add_reaction(LIKE_EMOTE)
+        message.add_reaction(INTERESTING_EMOTE)
     else:
         await ctx.send("No quotes have been added for this person yet.")
 
@@ -70,13 +74,25 @@ async def delete_quote(ctx, quote_id : int):
         delete_quote_by_id(quote_id)
         await ctx.send("The quote was successfully deleted!")
 
-@bot.command(name='leaderboard', help='Returns the top 10 rated quotes')
+@bot.command(name='leaderboard', help='Returns the top 10 liked quotes')
 async def leaderboard(ctx):
     leaderboard = ""
-    top_quotes = get_top_rated_quotes(LEADERBOARD_NUM_QUOTES)
+    top_quotes = get_top_liked_quotes(LEADERBOARD_NUM_QUOTES)
     place_on_leaderboard = 1
     for quote in top_quotes:
-        leaderboard += f"#{place_on_leaderboard} {repr(quote)}\n"
+        quote_format = QuoteInfo(quote).like_leaderboard_format()
+        leaderboard += f"#{place_on_leaderboard} {quote_format}\n"
+        place_on_leaderboard += 1
+    await ctx.send(leaderboard)
+
+@bot.command(name='interesting', help='Returns the top 10 interesting quotes')
+async def interesting_leaderboard(ctx):
+    leaderboard = ""
+    top_quotes = get_top_liked_quotes(LEADERBOARD_NUM_QUOTES)
+    place_on_leaderboard = 1
+    for quote in top_quotes:
+        quote_format = QuoteInfo(quote).interesting_leaderboard_format()
+        leaderboard += f"#{place_on_leaderboard} {quote_format}\n"
         place_on_leaderboard += 1
     await ctx.send(leaderboard)
 
@@ -100,7 +116,7 @@ async def on_message_delete(message):
 async def on_raw_reaction_add(payload):
     if payload.member.name == BOT_NAME:
         return
-    if payload.emoji.name == THUMBS_UP:
+    if payload.emoji.name == LIKE_EMOTE:
         channel = bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
         if not message:
@@ -117,8 +133,29 @@ async def on_raw_reaction_add(payload):
             if not check_quote_exists_by_id(quote_id):
                 return
             quote = select_quote_by_id(quote_id)
-            if(current_count > quote.score):
-                update_score_of_quote(quote_id,current_count)
+            if(current_count > quote.like):
+                update_like_score_of_quote(quote_id,current_count)
+            new_message = f"{message.content[0:-1]}{current_count}"
+        await message.edit(content=new_message)
+    if payload.emoji.name == INTERESTING_EMOTE:
+        channel = bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        if not message:
+            return
+        if message.author.name != BOT_NAME:
+            return
+        reaction = get(message.reactions, emoji=payload.emoji.name)
+        if reaction:
+            current_count = reaction.count-1
+            quote_id_str = message.content.split()[0][1:-1]
+            if not quote_id_str.isnumeric():
+                return
+            quote_id = int(quote_id_str)
+            if not check_quote_exists_by_id(quote_id):
+                return
+            quote = select_quote_by_id(quote_id)
+            if(current_count > quote.interesting):
+                update_interesting_score_of_quote(quote_id,current_count)
             new_message = f"{message.content[0:-1]}{current_count}"
         await message.edit(content=new_message)
    
@@ -151,13 +188,6 @@ def validate_quote_format(message: str) -> 'ValidatedQuote':
     quote = quote.replace("'","''")
     author = author.replace("'","''")
     return ValidatedQuote(quote,author)
-
-def format_quote(row):
-    quote_id = row[0]
-    author = row[1]
-    quote = row[2]
-    score = row[3]
-    return f"({quote_id}) \"{quote}\" - {author}, Score: {score}"
     
 def establish_db_Connection():
     return  psycopg2.connect(
@@ -173,14 +203,14 @@ def add_new_quote(quote,author) -> None:
 def insert_quote(quote,author):
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}, {DB_COL_SCORE}) VALUES  ('{author}', '{quote}', 0);")
+    cur.execute(f"INSERT INTO {DB_TABLE}({DB_COL_AUTHOR}, {DB_COL_QUOTE}, {DB_COL_LIKE_SCORE}, {DB_COL_INTERESTING_SCORE}) VALUES  ('{author}', '{quote}', 0, 0);")
     conn.commit()
     conn.close()
 
 def select_quote_by_id(quote_id : int) -> 'QuoteInfo':
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_SCORE} FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id};")
+    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_LIKE_SCORE},DB_COL_INTERESTING_SCORE FROM {DB_TABLE} WHERE {DB_COL_QID} = {quote_id};")
     row = cur.fetchone()
     conn.close()
     return get_quote_info_from_row(row)
@@ -188,7 +218,7 @@ def select_quote_by_id(quote_id : int) -> 'QuoteInfo':
 def select_person_quote(author):
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_SCORE} FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\' ORDER BY random() LIMIT 1;")
+    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_LIKE_SCORE},{DB_COL_INTERESTING_SCORE} FROM {DB_TABLE} WHERE {DB_COL_AUTHOR} = \'{author}\' ORDER BY random() LIMIT 1;")
     row = cur.fetchone()
     conn.close()
     return get_quote_info_from_row(row) 
@@ -196,7 +226,7 @@ def select_person_quote(author):
 def select_any_quote() -> 'QuoteInfo':
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_SCORE} FROM {DB_TABLE} ORDER BY random() LIMIT 1;")
+    cur.execute(f"SELECT {DB_COL_QID},{DB_COL_AUTHOR},{DB_COL_QUOTE},{DB_COL_LIKE_SCORE},{DB_COL_INTERESTING_SCORE} FROM {DB_TABLE} ORDER BY random() LIMIT 1;")
     row = cur.fetchone()
     conn.close()
     return get_quote_info_from_row(row)
@@ -225,17 +255,32 @@ def check_quote_exists_by_quote_and_author(quote,author):
     conn.close()
     return row[0]
 
-def update_score_of_quote(quote_id,new_score):
+def update_like_score_of_quote(quote_id,new_score):
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"UPDATE {DB_TABLE} SET {DB_COL_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
+    cur.execute(f"UPDATE {DB_TABLE} SET {DB_COL_LIKE_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
     conn.commit()
     conn.close()
 
-def get_top_rated_quotes(number_of_quotes):
+def update_interesting_score_of_quote(quote_id,new_score):
     conn = establish_db_Connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT * FROM {DB_TABLE} ORDER BY {DB_COL_SCORE} DESC LIMIT {number_of_quotes}")
+    cur.execute(f"UPDATE {DB_TABLE} SET {DB_COL_INTERESTING_SCORE}={new_score} WHERE {DB_COL_QID} = {quote_id}")
+    conn.commit()
+    conn.close()
+
+def get_top_liked_quotes(number_of_quotes):
+    conn = establish_db_Connection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM {DB_TABLE} ORDER BY {DB_COL_LIKE_SCORE} DESC LIMIT {number_of_quotes}")
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+def get_top_interesting_quotes(number_of_quotes):
+    conn = establish_db_Connection()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM {DB_TABLE} ORDER BY {DB_COL_INTERESTING_SCORE} DESC LIMIT {number_of_quotes}")
     rows = cur.fetchall()
     conn.close()
     return rows
@@ -270,11 +315,17 @@ class QuoteInfo:
         self.quote_id = row[0]
         self.author = row[1]
         self.quote = row[2]
-        self.score = row[3]
+        self.like = row[3]
+        self.interesting = row[4]
+
+    def like_leaderboard_format(self) -> str:
+        return f"Likes: {self.like}) \"{self.quote}\" - {self.author} ({self.quote_id})"
+
+    def interesting_leaderboard_format(self) -> str:
+        return f"Interesting Score: {self.interesting}) \"{self.quote}\" - {self.author} ({self.quote_id})"
 
     def __repr__(self) -> str:
-        return f"({self.quote_id}) \"{self.quote}\" - {self.author}, Score: {self.score}"
-
+        return f"(\"{self.quote}\" - {self.author}, Like Score: {self.score}, Interesting Score: {self.interesting} {self.quote_id})"
         
         
 bot.run(TOKEN)
