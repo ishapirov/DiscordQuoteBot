@@ -88,7 +88,7 @@ async def leaderboard(ctx):
 @bot.command(name='interesting', help='Returns the top 10 interesting quotes')
 async def interesting_leaderboard(ctx):
     leaderboard = ""
-    top_quotes = get_top_liked_quotes(LEADERBOARD_NUM_QUOTES)
+    top_quotes = get_top_interesting_quotes(LEADERBOARD_NUM_QUOTES)
     place_on_leaderboard = 1
     for quote in top_quotes:
         quote_format = QuoteInfo(quote).interesting_leaderboard_format()
