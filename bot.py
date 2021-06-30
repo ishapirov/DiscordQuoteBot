@@ -8,6 +8,8 @@ TOKEN = os.environ['DISCORD_TOKEN']
 GUILD = os.environ['DISCORD_GUILD']
 COMMAND_PREFIX = '!'
 BOT_NAME = 'QuoteBot'
+QUOTE_CHANNEL = 'quotes'
+QUOTES_PULL_CHANNEL = 'quotes-pull'
 
 HOST=os.environ['HOST']
 DATABASE=os.environ['DATABASE']
@@ -33,18 +35,16 @@ bot = commands.Bot(command_prefix=COMMAND_PREFIX,intents=intents)
 
 @bot.event
 async def on_message(message):
-    if message.channel.name != 'quotes' and message.channel.name != 'quotes-pull':
-        return
     if message.author.name == BOT_NAME:
         return
-    if message.content.startswith(COMMAND_PREFIX):
-        await bot.process_commands(message)
-    else:
+    if message.channel.name == QUOTE_CHANNEL:
         validQuote = validate_quote_format(message.content)
         if(validQuote == None):
             return
         add_new_quote(validQuote.author,validQuote.quote)
-    
+    if message.channel.name == QUOTES_PULL_CHANNEL:    
+        if message.content.startswith(COMMAND_PREFIX):
+            await bot.process_commands(message)
 
 @bot.command(name='quote', help='Responds with a random quote from any user')
 async def quote(ctx):
