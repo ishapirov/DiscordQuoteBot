@@ -163,7 +163,7 @@ async def on_raw_reaction_add(payload):
    
 
 
-# @bot.command(name='addhistory',help="Adds quotes from the message history of this channel")
+@bot.command(name='addhistory',help="Adds quotes from the message history of this channel")
 async def add_historical_quotes(ctx):
     messages = await ctx.channel.history(limit=2000).flatten()
     for message in messages:
@@ -199,7 +199,7 @@ def establish_db_Connection():
     password=PASSWORD)
 
 def add_new_quote(quote,author) -> None:
-    if not check_quote_exists_by_quote_and_author(quote,author)[0]:
+    if not check_quote_exists_by_quote_and_author(quote,author):
         insert_quote(quote,author)
 
 def insert_quote(quote,author):
