@@ -164,7 +164,7 @@ async def on_raw_reaction_add(payload):
             new_message = repr(quote)
         await message.edit(content=new_message)
    
-@bot.command(name='addhistory',help="Adds quotes from the message history of this channel")
+# @bot.command(name='addhistory',help="Adds quotes from the message history of this channel")
 async def add_historical_quotes(ctx):
     messages = await ctx.channel.history(limit=2000).flatten()
     for message in messages:
