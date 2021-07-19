@@ -64,8 +64,8 @@ async def quote_from(ctx,quote_author):
     if check_person_has_quote(quote_author.lower()):
         quoteInfo = select_person_quote(quote_author.lower())
         message = await ctx.send(repr(quoteInfo))
-        message.add_reaction(LIKE_EMOTE)
-        message.add_reaction(INTERESTING_EMOTE)
+        await message.add_reaction(LIKE_EMOTE)
+        await message.add_reaction(INTERESTING_EMOTE)
     else:
         await ctx.send("No quotes have been added for this person yet.")
 
