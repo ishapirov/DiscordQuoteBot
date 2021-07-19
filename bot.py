@@ -308,9 +308,9 @@ def get_quote_info_from_row(row) -> 'QuoteInfo':
     return QuoteInfo(row)
 
 class ValidatedQuote:
-    def __init__(self,author,quote: tuple):
-        self.author = author
+    def __init__(self,quote,author: tuple):
         self.quote = quote
+        self.author = author
 
 class QuoteInfo:
     def __init__(self,row: tuple):
