@@ -10,12 +10,12 @@ PASSWORD=os.environ['PASSWORD']
 
 config = configparser.ConfigParser()
 config.read('dbconfig.ini')
-DB_TABLE = config['Table']
-DB_COL_QID = config['colQuoteId']
-DB_COL_AUTHOR = config['colAuthor']
-DB_COL_QUOTE = config['colQuote']
-DB_COL_LIKE_SCORE = config['colLikeScore']
-DB_COL_INTERESTING_SCORE = config['colInterestingScore']
+DB_TABLE = config['Database']['Table']
+DB_COL_QID = config['Database']['colQuoteId']
+DB_COL_AUTHOR = config['Database']['colAuthor']
+DB_COL_QUOTE = config['Database']['colQuote']
+DB_COL_LIKE_SCORE = config['Database']['colLikeScore']
+DB_COL_INTERESTING_SCORE = config['Database']['colInterestingScore']
 
 def establish_db_Connection():
     return  psycopg2.connect(

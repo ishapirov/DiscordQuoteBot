@@ -12,14 +12,14 @@ GUILD = os.environ['DISCORD_GUILD']
 
 config = configparser.ConfigParser()
 config.read('config.ini')
-COMMAND_PREFIX = config['CommandPrefix']
-BOT_NAME = config['BotName']
-QUOTE_CHANNEL = config['QuoteChannel']
-QUOTES_PULL_CHANNEL = config['QuotePullChannel']
+COMMAND_PREFIX = config['BotInfo']['CommandPrefix']
+BOT_NAME = config['BotInfo']['BotName']
+QUOTE_CHANNEL = config['BotInfo']['QuoteChannel']
+QUOTES_PULL_CHANNEL = config['BotInfo']['QuotePullChannel']
 
-LEADERBOARD_NUM_QUOTES = int(config['leaderboardQuoteAmount'])
-LIKE_EMOTE=config['likeEmote']
-INTERESTING_EMOTE=config['interestingEmote']
+LEADERBOARD_NUM_QUOTES = int(config['BotInfo']['leaderboardQuoteAmount'])
+LIKE_EMOTE=config['BotInfo']['likeEmote']
+INTERESTING_EMOTE=config['BotInfo']['interestingEmote']
 
 def botSetup():
     intents = discord.Intents.default()
