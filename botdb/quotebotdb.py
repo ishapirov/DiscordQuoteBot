@@ -9,7 +9,7 @@ USERNAME=os.environ['USERNAME']
 PASSWORD=os.environ['PASSWORD']
 
 config = configparser.ConfigParser()
-config.read('dbconfig.ini')
+config.read('config.ini')
 DB_TABLE = config['Database']['Table']
 DB_COL_QID = config['Database']['colQuoteId']
 DB_COL_AUTHOR = config['Database']['colAuthor']
