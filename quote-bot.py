@@ -151,7 +151,9 @@ def get_quote_and_reaction_count(message,emoji):
     return current_count,quote
 
 async def like_reaction_add(channel_id,message_id,emoji):
-    message = get_discord_message(channel_id,message_id)
+    message = await get_discord_message(channel_id,message_id)
+    if(not message):
+        return
     count_and_quote = get_quote_and_reaction_count(message,emoji)
     if(not count_and_quote):
         return
