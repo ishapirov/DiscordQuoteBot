@@ -2,9 +2,9 @@ import os
 import discord
 from discord.ext import commands
 from discord.utils import get
-import modules.botdb as botdb
-from modules.domain.quoteinfo import QuoteInfo
-from modules.domain.validatedquote import ValidatedQuote
+import botdb.quotebotdb as botdb
+from domain.quoteinfo import QuoteInfo
+from domain.validatedquote import ValidatedQuote
 import configparser
 
 TOKEN = os.environ['DISCORD_TOKEN']
