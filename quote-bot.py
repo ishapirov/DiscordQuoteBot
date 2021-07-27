@@ -41,7 +41,7 @@ async def on_message(message):
             validQuote = validate_quote_format(message.content)
             if(validQuote == None):
                 return
-            botdb.add_new_quote(validQuote.author,validQuote.quote)
+            botdb.add_new_quote(validQuote.quote,validQuote.author)
     if message.channel.name == QUOTES_PULL_CHANNEL:    
         if message.content.startswith(COMMAND_PREFIX):
             await bot.process_commands(message)
@@ -182,9 +182,9 @@ async def on_raw_reaction_add(payload):
     message_id = payload.message_id
     emoji = payload.emoji.name
     if payload.emoji.name == LIKE_EMOTE:
-        like_reaction_add(channel_id,message_id,emoji)
+        await like_reaction_add(channel_id,message_id,emoji)
     if payload.emoji.name == INTERESTING_EMOTE:
-        interesting_reaction_add(channel_id,message_id,emoji)
+        await interesting_reaction_add(channel_id,message_id,emoji)
    
 # @bot.command(name='addhistory',help="Adds quotes from the message history of this channel")
 async def add_historical_quotes(ctx):
